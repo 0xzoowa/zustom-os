@@ -180,6 +180,3 @@ understand what is happening beneath the surface.
 
 ---
 
-This is just the beginning. The simple act of printing "Hello, Kernel
-World!" is not trivial, it is proof that I now understand, at least in
-part, how a machine comes alive.

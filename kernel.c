@@ -38,6 +38,11 @@ static inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg)
     return fg | bg << 4;
 }
 
+static inline uint8_t vga_entry_color_blink(enum vga_color fg, enum vga_color bg)
+{
+    return fg | bg << 4 | 0x80; // 0x80 => 1000 0000 (7th bit on)
+}
+
 static inline uint16_t vga_entry(unsigned char uc, uint8_t color)
 {
     return (uint16_t)uc | (uint16_t)color << 8;
@@ -64,7 +69,7 @@ void terminal_initialize(void)
 {
     terminal_row = 0;
     terminal_column = 0;
-    terminal_color = vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
+    terminal_color = vga_entry_color_blink(VGA_COLOR_MAGENTA, VGA_COLOR_LIGHT_CYAN);
 
     for (size_t y = 0; y < VGA_HEIGHT; y++)
     {
@@ -97,35 +102,39 @@ void terminal_putchar(char c)
 
         if (terminal_row == VGA_HEIGHT)
         {
-            terminal_scroll(); //terminal_row = 0;
+            terminal_scroll(); // terminal_row = 0;
         }
 
         return;
     }
 
     terminal_putentryat(c, terminal_color, terminal_column, terminal_row);
-    
+
     if (++terminal_column == VGA_WIDTH)
     {
         terminal_column = 0;
         if (++terminal_row == VGA_HEIGHT)
-            terminal_scroll();  //terminal_row = 0;
+            terminal_scroll(); // terminal_row = 0;
     }
 }
-void terminal_scroll(){
+void terminal_scroll()
+{
 
     //  copy (y+1)th row to yth row
-    for(size_t y = 0; y < VGA_HEIGHT - 1; y++){
-        for(size_t x = 0; x < VGA_WIDTH;  x++){
+    for (size_t y = 0; y < VGA_HEIGHT - 1; y++)
+    {
+        for (size_t x = 0; x < VGA_WIDTH; x++)
+        {
             size_t index = y * VGA_WIDTH + x;
-            terminal_buffer[index] = terminal_buffer[(y+1)*VGA_WIDTH+x];
+            terminal_buffer[index] = terminal_buffer[(y + 1) * VGA_WIDTH + x];
         }
     }
 
     // clear bottom row
 
-    for (size_t x = 0; x < VGA_WIDTH; x++){
-        terminal_buffer[(VGA_HEIGHT-1)*VGA_WIDTH + x] = vga_entry(' ', terminal_color);
+    for (size_t x = 0; x < VGA_WIDTH; x++)
+    {
+        terminal_buffer[(VGA_HEIGHT - 1) * VGA_WIDTH + x] = vga_entry(' ', terminal_color);
     }
 
     terminal_row = VGA_HEIGHT - 1;
@@ -149,5 +158,6 @@ void kernel_main(void)
 
     /* Newline support is left as an exercise. */
     terminal_writestring("Hello\n");
-    terminal_writestring("kernel World!\n"); //"Hello, kernel World!o
+    terminal_writestring("Kernel\n");
+    terminal_writestring("World!\n"); //"Hello, kernel World!o
 }

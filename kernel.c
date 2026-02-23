@@ -102,7 +102,9 @@ void terminal_putchar(char c)
 
         return;
     }
+
     terminal_putentryat(c, terminal_color, terminal_column, terminal_row);
+    
     if (++terminal_column == VGA_WIDTH)
     {
         terminal_column = 0;
@@ -125,6 +127,8 @@ void terminal_scroll(){
     for (size_t x = 0; x < VGA_WIDTH; x++){
         terminal_buffer[(VGA_HEIGHT-1)*VGA_WIDTH + x] = vga_entry(' ', terminal_color);
     }
+
+    terminal_row = VGA_HEIGHT - 1;
 }
 
 void terminal_write(const char *data, size_t size)

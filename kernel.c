@@ -97,7 +97,7 @@ void terminal_putchar(char c)
 
         if (terminal_row == VGA_HEIGHT)
         {
-            terminal_row = 0;
+            terminal_scroll(); //terminal_row = 0;
         }
 
         return;
@@ -107,7 +107,23 @@ void terminal_putchar(char c)
     {
         terminal_column = 0;
         if (++terminal_row == VGA_HEIGHT)
-            terminal_row = 0;
+            terminal_scroll();  //terminal_row = 0;
+    }
+}
+void terminal_scroll(){
+
+    //  copy (y+1)th row to yth row
+    for(size_t y = 0; y < VGA_HEIGHT - 1; y++){
+        for(size_t x = 0; x < VGA_WIDTH;  x++){
+            size_t index = y * VGA_WIDTH + x;
+            terminal_buffer[index] = terminal_buffer[(y+1)*VGA_WIDTH+x];
+        }
+    }
+
+    // clear bottom row
+
+    for (size_t x = 0; x < VGA_WIDTH; x++){
+        terminal_buffer[(VGA_HEIGHT-1)*VGA_WIDTH + x] = vga_entry(' ', terminal_color);
     }
 }
 

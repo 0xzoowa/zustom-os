@@ -151,10 +151,46 @@ void terminal_writestring(const char *data)
     terminal_write(data, strlen(data));
 }
 
+static inline void outb(uint16_t port, uint8_t value)
+{
+    __asm__ volatile("outb %0, %1" : : "a"(value), "Nd"(port));
+}
+
+static inline uint8_t inb(uint16_t port)
+{
+    uint8_t ret;
+    __asm__ volatile("inb %1, %0" : "=a"(ret) : "Nd"(port));
+    return ret;
+}
+
+void check_blink_status(void)
+{
+    inb(0x3DA);                 // Reset flip-flop
+    outb(0x3C0, 0x10);          // Select Attribute Mode Control
+    uint8_t value = inb(0x3C1); // Read current value
+
+    if (value & 0x08)
+    {
+        terminal_writestring("Blink is ENABLED (bit 7 = blink)\n");
+    }
+    else
+    {
+        terminal_writestring("Blink is DISABLED (bit 7 = bright background)\n");
+    }
+}
+
 void kernel_main(void)
 {
     /* Initialize terminal interface */
     terminal_initialize();
+    check_blink_status();
+
+    // Test bright backgrounds
+    terminal_setcolor(vga_entry_color(VGA_COLOR_BLACK, VGA_COLOR_WHITE));
+    terminal_writestring("Black on WHITE\n");
+
+    terminal_setcolor(vga_entry_color(VGA_COLOR_BLACK, VGA_COLOR_LIGHT_BLUE));
+    terminal_writestring("Black on LIGHT BLUE\n");
 
     /* Newline support is left as an exercise. */
     terminal_writestring("Hello\n");

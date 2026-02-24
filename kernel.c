@@ -163,41 +163,57 @@ static inline uint8_t inb(uint16_t port)
     return ret;
 }
 
-void check_blink_status(void)
+// void check_blink_status(void)
+// {
+//     inb(0x3DA); // Reset flip-flop
+//     // Reset flip-flop
+//     inb(0x3DA);
+
+//     // Select Attribute Mode Control register (0x10)
+//     outb(0x3C0, 0x10);
+
+//     // Read current value
+//     uint8_t value = inb(0x3C1);
+
+//     // Re-enable display IMMEDIATELY after reading
+//     inb(0x3DA);        // Reset flip-flop again
+//     outb(0x3C0, 0x20); // Enable display (bit 5 = 1)
+
+//     // Now it's safe to write text
+//     if (value & 0x08)
+//     {
+//         terminal_writestring("Blink is ENABLED (bit 7 = blink)\n");
+//     }
+//     else
+//     {
+//         terminal_writestring("Blink is DISABLED (bit 7 = bright background)\n");
+//     }
+// }
+
+void vga_enable_blink(void)
 {
-    inb(0x3DA); // Reset flip-flop
-    // Reset flip-flop
-    inb(0x3DA);
-
-    // Select Attribute Mode Control register (0x10)
-    outb(0x3C0, 0x10);
-
-    // Read current value
-    uint8_t value = inb(0x3C1);
-
-    // Re-enable display IMMEDIATELY after reading
-    inb(0x3DA);        // Reset flip-flop again
-    outb(0x3C0, 0x20); // Enable display (bit 5 = 1)
-
-    // Now it's safe to write text
-    if (value & 0x08)
-    {
-        terminal_writestring("Blink is ENABLED (bit 7 = blink)\n");
-    }
-    else
-    {
-        terminal_writestring("Blink is DISABLED (bit 7 = bright background)\n");
-    }
+    inb(0x3DA);                 // Reset flip-flop
+    outb(0x3C0, 0x10);          // Select Attribute Mode Control
+    uint8_t value = inb(0x3C1); // Read current value
+    value |= 0x08;              // SET bit 3 (enable blink)
+    outb(0x3C0, value);         // Write back
+    outb(0x3C0, 0x20);          // Re-enable display
 }
 
 void kernel_main(void)
 {
     /* Initialize terminal interface */
     terminal_initialize();
-    check_blink_status();
+    vga_enable_blink();
+    // check_blink_status();
 
     /* Newline support is left as an exercise. */
     terminal_writestring("Hello\n");
     terminal_writestring("Kernel\n");
     terminal_writestring("World!\n"); //"Hello, kernel World!o
+
+    while (1)
+    {
+        __asm__ volatile("hlt");
+    }
 }

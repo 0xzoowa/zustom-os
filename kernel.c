@@ -69,7 +69,7 @@ void terminal_initialize(void)
 {
     terminal_row = 0;
     terminal_column = 0;
-    terminal_color = vga_entry_color_blink(VGA_COLOR_MAGENTA, VGA_COLOR_WHITE);
+    terminal_color = vga_entry_color(VGA_COLOR_MAGENTA, VGA_COLOR_WHITE);
 
     for (size_t y = 0; y < VGA_HEIGHT; y++)
     {
@@ -165,10 +165,21 @@ static inline uint8_t inb(uint16_t port)
 
 void check_blink_status(void)
 {
-    inb(0x3DA);                 // Reset flip-flop
-    outb(0x3C0, 0x10);          // Select Attribute Mode Control
-    uint8_t value = inb(0x3C1); // Read current value
+    inb(0x3DA); // Reset flip-flop
+    // Reset flip-flop
+    inb(0x3DA);
 
+    // Select Attribute Mode Control register (0x10)
+    outb(0x3C0, 0x10);
+
+    // Read current value
+    uint8_t value = inb(0x3C1);
+
+    // Re-enable display IMMEDIATELY after reading
+    inb(0x3DA);        // Reset flip-flop again
+    outb(0x3C0, 0x20); // Enable display (bit 5 = 1)
+
+    // Now it's safe to write text
     if (value & 0x08)
     {
         terminal_writestring("Blink is ENABLED (bit 7 = blink)\n");
@@ -184,13 +195,6 @@ void kernel_main(void)
     /* Initialize terminal interface */
     terminal_initialize();
     check_blink_status();
-
-    // Test bright backgrounds
-    terminal_setcolor(vga_entry_color(VGA_COLOR_BLACK, VGA_COLOR_WHITE));
-    terminal_writestring("Black on WHITE\n");
-
-    terminal_setcolor(vga_entry_color(VGA_COLOR_BLACK, VGA_COLOR_LIGHT_BLUE));
-    terminal_writestring("Black on LIGHT BLUE\n");
 
     /* Newline support is left as an exercise. */
     terminal_writestring("Hello\n");

@@ -38,11 +38,6 @@ static inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg)
     return fg | bg << 4;
 }
 
-static inline uint8_t vga_entry_color_blink(enum vga_color fg, enum vga_color bg)
-{
-    return fg | bg << 4 | 0x80; // 0x80 => 1000 0000 (7th bit on)
-}
-
 static inline uint16_t vga_entry(unsigned char uc, uint8_t color)
 {
     return (uint16_t)uc | (uint16_t)color << 8;
@@ -69,7 +64,7 @@ void terminal_initialize(void)
 {
     terminal_row = 0;
     terminal_column = 0;
-    terminal_color = vga_entry_color(VGA_COLOR_MAGENTA, VGA_COLOR_WHITE);
+    terminal_color = vga_entry_color(VGA_COLOR_MAGENTA, VGA_COLOR_LIGHT_CYAN);
 
     for (size_t y = 0; y < VGA_HEIGHT; y++)
     {
@@ -163,33 +158,6 @@ static inline uint8_t inb(uint16_t port)
     return ret;
 }
 
-// void check_blink_status(void)
-// {
-//     inb(0x3DA); // Reset flip-flop
-//     // Reset flip-flop
-//     inb(0x3DA);
-
-//     // Select Attribute Mode Control register (0x10)
-//     outb(0x3C0, 0x10);
-
-//     // Read current value
-//     uint8_t value = inb(0x3C1);
-
-//     // Re-enable display IMMEDIATELY after reading
-//     inb(0x3DA);        // Reset flip-flop again
-//     outb(0x3C0, 0x20); // Enable display (bit 5 = 1)
-
-//     // Now it's safe to write text
-//     if (value & 0x08)
-//     {
-//         terminal_writestring("Blink is ENABLED (bit 7 = blink)\n");
-//     }
-//     else
-//     {
-//         terminal_writestring("Blink is DISABLED (bit 7 = bright background)\n");
-//     }
-// }
-
 void vga_enable_blink(void)
 {
     inb(0x3DA);                 // Reset flip-flop
@@ -198,6 +166,15 @@ void vga_enable_blink(void)
     value |= 0x08;              // SET bit 3 (enable blink)
     outb(0x3C0, value);         // Write back
     outb(0x3C0, 0x20);          // Re-enable display
+
+    if (value & 0x08)
+    {
+        terminal_writestring("Blink is ENABLED (bit 7 = blink)\n");
+    }
+    else
+    {
+        terminal_writestring("Blink is DISABLED (bit 7 = bright background)\n");
+    }
 }
 
 void kernel_main(void)
@@ -205,7 +182,6 @@ void kernel_main(void)
     /* Initialize terminal interface */
     terminal_initialize();
     vga_enable_blink();
-    // check_blink_status();
 
     /* Newline support is left as an exercise. */
     terminal_writestring("Hello\n");
